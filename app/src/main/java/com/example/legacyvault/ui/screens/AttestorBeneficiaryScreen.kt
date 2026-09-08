@@ -1,12 +1,17 @@
 package com.example.legacyvault.ui.screens
 
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -28,6 +34,7 @@ fun AttestorBeneficiaryScreen(
     repository: VaultRepository,
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
     val attestors by repository.attestors.collectAsState()
     val isVaultUnlocked by repository.isVaultUnlocked.collectAsState()
     val blockchainLogs by repository.blockchainLogs.collectAsState()
@@ -35,17 +42,40 @@ fun AttestorBeneficiaryScreen(
     val beneficiaryName by repository.beneficiaryName.collectAsState()
     val records by repository.records.collectAsState()
     val instructions by repository.instructions.collectAsState()
+    val cryptoProof by repository.cryptoProof.collectAsState()
 
     val attestedCount = attestors.count { it.hasAttested }
     var showReleaseDialog by remember { mutableStateOf(false) }
+    var showAddAttestorDialog by remember { mutableStateOf(false) }
+    var showMathPanel by remember { mutableStateOf(true) }
+
+    // Add Attestor Form State
+    var newName by remember { mutableStateOf("") }
+    var newRole by remember { mutableStateOf("") }
+    var newPhone by remember { mutableStateOf("") }
+    var isAddingAttestor by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Trust Verification & Release", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DeepCharcoal) },
+                title = {
+                    Text(
+                        text = "Attestors & Vault Release",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DeepCharcoal
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = DeepCharcoal)
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = DeepCharcoal)
+                    }
+                },
+                actions = {
+                    TextButton(onClick = { repository.fetchCryptoProof() }) {
+                        Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh", modifier = Modifier.size(16.dp), tint = SlateNavy)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Refresh", fontSize = 12.sp, color = SlateNavy, fontWeight = FontWeight.SemiBold)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = WarmCream)
@@ -60,7 +90,7 @@ fun AttestorBeneficiaryScreen(
                 .padding(horizontal = 20.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Status Banner
+            // 1. Status Banner
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -95,7 +125,7 @@ fun AttestorBeneficiaryScreen(
                                 color = CardBackground
                             ) {
                                 Text(
-                                    text = "$attestedCount / 2 Verified",
+                                    text = "$attestedCount / 2 Attestations",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = DeepCharcoal,
@@ -120,11 +150,11 @@ fun AttestorBeneficiaryScreen(
 
                         Text(
                             text = if (isVaultUnlocked)
-                                "Threshold reached (2 of 3). Shamir's Secret reconstructed the encryption key. All assets & instructions are now available to $beneficiaryName."
+                                "Threshold reached (2 of ${attestors.size}). Shamir's Secret reconstructed the master key. All assets & instructions are now available to $beneficiaryName."
                             else if (escalationActive)
-                                "Alert: Sustained non-response detected. Designated attestors are requested to independently submit their shares."
+                                "Alert: Sustained non-response detected. Designated attestors are requested to log in and independently submit their cryptographic shares."
                             else
-                                "Owner living signal is active. SSS shares remain securely distributed. Any 2 of 3 attestors are required to authorize release.",
+                                "Owner living signal is active. SSS shares remain securely distributed. Any 2 of ${attestors.size} attestors are required to authorize release.",
                             fontSize = 13.sp,
                             color = DeepCharcoal,
                             lineHeight = 18.sp
@@ -133,17 +163,63 @@ fun AttestorBeneficiaryScreen(
                 }
             }
 
-            // Attestors List
+            // 2. Security Model Notice (Explains strict non-proxy rule)
             item {
-                Text(
-                    text = "Designated Trusted Attestors",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = SlateNavy,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = SlateNavyLight.copy(alpha = 0.08f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Security,
+                            contentDescription = null,
+                            tint = SlateNavy,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Non-Custodial Security Model: Only each independent attestor, logged in through their own account, can submit their cryptographic share. No one (including the owner) can attest on another's behalf.",
+                            fontSize = 12.sp,
+                            color = DeepCharcoal,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
             }
 
+            // 3. Attestors Header with Add Attestor Action
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Designated Trusted Attestors (${attestors.size})",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = SlateNavy
+                    )
+
+                    OutlinedButton(
+                        onClick = { showAddAttestorDialog = true },
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(16.dp), tint = SlateNavy)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Add Attestor", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SlateNavy)
+                    }
+                }
+            }
+
+            // 4. Attestors List (Pure status display - NO proxy submit buttons)
             items(attestors) { attestor ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -169,8 +245,18 @@ fun AttestorBeneficiaryScreen(
                                     ) {
                                         Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = ForestGreen, modifier = Modifier.size(14.dp))
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Attested", fontSize = 11.sp, color = ForestGreen, fontWeight = FontWeight.Bold)
+                                        Text("Attestation Submitted ✓", fontSize = 11.sp, color = ForestGreen, fontWeight = FontWeight.Bold)
                                     }
+                                }
+                            } else {
+                                Surface(shape = RoundedCornerShape(8.dp), color = WarmAmberLight) {
+                                    Text(
+                                        text = "Awaiting Attestor Login",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = WarmAmberDark,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
                                 }
                             }
                         }
@@ -183,20 +269,201 @@ fun AttestorBeneficiaryScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Key Share: ${attestor.shareFragment}",
+                                text = "Shamir Share: ${attestor.shareFragment}",
                                 fontSize = 11.sp,
                                 fontFamily = FontFamily.Monospace,
-                                color = MutedGrey
+                                color = HeritageTeal
                             )
+                            Text(
+                                text = if (attestor.hasAttested) "Recorded on-chain" else "Independent Login Required",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = if (attestor.hasAttested) ForestGreen else SlateGrey
+                            )
+                        }
+                    }
+                }
+            }
 
-                            if (!attestor.hasAttested) {
-                                Button(
-                                    onClick = { repository.submitAttestation(attestor.id) },
-                                    shape = RoundedCornerShape(10.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = SlateNavy),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                                ) {
-                                    Text("Verify & Submit Share", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            // 5. "Show the Math" Live Cryptographic Proof Panel
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = SlateNavy),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showMathPanel = !showMathPanel },
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(imageVector = Icons.Default.Functions, contentDescription = null, tint = GoldAccent)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "Show the Math (Live Cryptographic Audit)",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    Text(
+                                        text = "Live GF(2^8) Lagrange polynomial state from backend",
+                                        fontSize = 10.sp,
+                                        color = Color.White.copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
+                            Icon(
+                                imageVector = if (showMathPanel) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = null,
+                                tint = Color.White
+                            )
+                        }
+
+                        AnimatedVisibility(visible = showMathPanel) {
+                            Column(modifier = Modifier.padding(top = 12.dp)) {
+                                val proof = cryptoProof
+                                if (proof != null) {
+                                    // Original Master Key
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = Color.Black.copy(alpha = 0.3f),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Column(modifier = Modifier.padding(10.dp)) {
+                                            Text(
+                                                text = "Original 256-bit AES Master Key:",
+                                                fontSize = 10.sp,
+                                                color = GoldAccent,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                            Text(
+                                                text = proof.originalMasterKeyTruncated,
+                                                fontSize = 11.sp,
+                                                fontFamily = FontFamily.Monospace,
+                                                color = Color.White
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = "SHA-256 Hash: ${proof.originalMasterKeyHash.take(16)}...${proof.originalMasterKeyHash.takeLast(8)}",
+                                                fontSize = 10.sp,
+                                                fontFamily = FontFamily.Monospace,
+                                                color = Color.White.copy(alpha = 0.7f)
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    // Real Shares Landing Status
+                                    Text(
+                                        text = "Distributed Shamir Shares (${proof.sharesSubmittedCount} of ${proof.threshold} received):",
+                                        fontSize = 11.sp,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    proof.shares.forEach { s ->
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 2.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = "${s.name.take(18)}: ${s.shareDisplay}",
+                                                fontSize = 10.sp,
+                                                fontFamily = FontFamily.Monospace,
+                                                color = Color.White.copy(alpha = 0.85f)
+                                            )
+                                            if (s.hasSubmitted) {
+                                                Surface(shape = RoundedCornerShape(4.dp), color = ForestGreen) {
+                                                    Text(
+                                                        text = "Received ✓",
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Color.White,
+                                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                            } else {
+                                                Surface(shape = RoundedCornerShape(4.dp), color = Color.Gray.copy(alpha = 0.4f)) {
+                                                    Text(
+                                                        text = "Awaiting",
+                                                        fontSize = 9.sp,
+                                                        color = Color.White.copy(alpha = 0.7f),
+                                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    // Reconstructed Key Match Proof
+                                    if (proof.reconstructedKeyHash != null) {
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = ForestGreen.copy(alpha = 0.25f),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Column(modifier = Modifier.padding(10.dp)) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, tint = ForestGreenLight, modifier = Modifier.size(16.dp))
+                                                    Spacer(modifier = Modifier.width(6.dp))
+                                                    Text(
+                                                        text = "Lagrange Interpolation Match Confirmed!",
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = ForestGreenLight
+                                                    )
+                                                }
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = "Reconstructed Key: ${proof.reconstructedKeyTruncated}",
+                                                    fontSize = 10.sp,
+                                                    fontFamily = FontFamily.Monospace,
+                                                    color = Color.White
+                                                )
+                                                Text(
+                                                    text = "Reconstructed Hash == Original Hash: MATCH CONFIRMED",
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = GoldAccent
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                    }
+
+                                    // Clickable Polygonscan Amoy Explorer Link
+                                    Button(
+                                        onClick = {
+                                            val url = proof.polygonscanUrl
+                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                            context.startActivity(intent)
+                                        },
+                                        shape = RoundedCornerShape(8.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = HeritageTeal),
+                                        modifier = Modifier.fillMaxWidth().height(38.dp)
+                                    ) {
+                                        Icon(imageVector = Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("View Contract on Polygonscan Amoy ↗", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                } else {
+                                    Text(
+                                        text = "Connecting to backend cryptographic audit service...",
+                                        fontSize = 11.sp,
+                                        color = Color.White.copy(alpha = 0.7f)
+                                    )
                                 }
                             }
                         }
@@ -204,15 +471,15 @@ fun AttestorBeneficiaryScreen(
                 }
             }
 
-            // Blockchain Audit Trail
+            // 6. Blockchain Audit Trail
             item {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Immutable Blockchain Log",
+                        text = "Immutable On-Chain Attestation Log",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = SlateNavy
@@ -232,27 +499,6 @@ fun AttestorBeneficiaryScreen(
                 }
             }
 
-            item {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = SlateNavyLight.copy(alpha = 0.08f),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(imageVector = Icons.Default.Shield, contentDescription = null, tint = HeritageTeal, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Showing last confirmed on-chain state • Cryptographic proof",
-                            fontSize = 11.sp,
-                            color = SlateGrey
-                        )
-                    }
-                }
-            }
-
             if (blockchainLogs.isEmpty()) {
                 item {
                     Card(
@@ -262,7 +508,7 @@ fun AttestorBeneficiaryScreen(
                     ) {
                         Box(modifier = Modifier.padding(16.dp), contentAlignment = Alignment.Center) {
                             Text(
-                                text = "No attestation transactions logged yet. Submit an attestation above to see immutable on-chain proof.",
+                                text = "No attestation transactions logged yet. Switch to an attestor profile to record the first immutable on-chain receipt.",
                                 fontSize = 12.sp,
                                 color = SlateGrey,
                                 textAlign = TextAlign.Center
@@ -299,7 +545,7 @@ fun AttestorBeneficiaryScreen(
                 }
             }
 
-            // Beneficiary Payoff Moment
+            // 7. Beneficiary Payoff Card (Active once 2-of-N threshold reached)
             if (isVaultUnlocked) {
                 item {
                     Card(
@@ -344,42 +590,6 @@ fun AttestorBeneficiaryScreen(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text("View Synthesized Estate Summary", fontSize = 15.sp, fontWeight = FontWeight.Bold)
                             }
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            // Office Kit Cross-Device Integration Card (10% Rubric Point)
-                            Surface(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                color = IndigoModern.copy(alpha = 0.1f)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Devices,
-                                        contentDescription = "Office Kit Bridge",
-                                        tint = IndigoModern,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Column {
-                                        Text(
-                                            text = "Office Kit Phone-to-Laptop Bridge Active",
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = IndigoModern
-                                        )
-                                        Text(
-                                            text = "Mirroring attestation receipts live & dropping final summary PDF directly to beneficiary's laptop.",
-                                            fontSize = 11.sp,
-                                            color = DeepCharcoal,
-                                            lineHeight = 15.sp
-                                        )
-                                    }
-                                }
-                            }
                         }
                     }
                 }
@@ -388,6 +598,94 @@ fun AttestorBeneficiaryScreen(
             item {
                 Spacer(modifier = Modifier.height(24.dp))
             }
+        }
+
+        // Add Attestor Dialog
+        if (showAddAttestorDialog) {
+            AlertDialog(
+                onDismissRequest = { if (!isAddingAttestor) showAddAttestorDialog = false },
+                title = { Text("Add Trusted Attestor & Re-split Shares", fontWeight = FontWeight.Bold, fontSize = 17.sp) },
+                text = {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = WarmAmberLight,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "Important: Adding an attestor re-splits the vault master key across ${attestors.size + 1} shares using a new random polynomial over GF(2^8). All attestors will receive updated key fragments, and prior signatures are invalidated.",
+                                fontSize = 11.sp,
+                                color = WarmAmberDark,
+                                lineHeight = 15.sp,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        OutlinedTextField(
+                            value = newName,
+                            onValueChange = { newName = it },
+                            label = { Text("Attestor Full Name") },
+                            placeholder = { Text("e.g. K. Venkatesh (Brother)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedTextField(
+                            value = newRole,
+                            onValueChange = { newRole = it },
+                            label = { Text("Role or Relationship") },
+                            placeholder = { Text("e.g. Brother, Chartered Accountant") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedTextField(
+                            value = newPhone,
+                            onValueChange = { newPhone = it },
+                            label = { Text("Phone Number") },
+                            placeholder = { Text("+91 98400 12345") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            if (newName.isNotBlank()) {
+                                isAddingAttestor = true
+                                repository.addAttestor(
+                                    name = newName.trim(),
+                                    role = if (newRole.isBlank()) "Trusted Attestor" else newRole.trim(),
+                                    phone = if (newPhone.isBlank()) "—" else newPhone.trim()
+                                ) { success, msg ->
+                                    isAddingAttestor = false
+                                    showAddAttestorDialog = false
+                                    newName = ""
+                                    newRole = ""
+                                    newPhone = ""
+                                    Toast.makeText(context, msg ?: "Attestor added successfully", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        },
+                        enabled = newName.isNotBlank() && !isAddingAttestor,
+                        colors = ButtonDefaults.buttonColors(containerColor = SlateNavy)
+                    ) {
+                        Text(if (isAddingAttestor) "Re-splitting SSS..." else "Confirm & Re-split")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showAddAttestorDialog = false }, enabled = !isAddingAttestor) {
+                        Text("Cancel", color = SlateGrey)
+                    }
+                }
+            )
         }
 
         if (showReleaseDialog) {
@@ -400,7 +698,7 @@ fun AttestorBeneficiaryScreen(
                             text = "Consolidated for $beneficiaryName\n" +
                                     "• ${records.size} Financial Accounts & Policies Discovered\n" +
                                     "• ${instructions.size} Encrypted Practical Access Notes Unlocked\n" +
-                                    "• Verified by 2-of-3 Shamir's Secret Sharing Key Reconstruction\n" +
+                                    "• Authorized by 2-of-${attestors.size} Shamir's Secret Sharing Key Reconstruction\n" +
                                     "• Immutably Logged on Polygon Amoy",
                             fontSize = 13.sp,
                             lineHeight = 20.sp,

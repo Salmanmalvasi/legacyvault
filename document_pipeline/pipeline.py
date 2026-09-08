@@ -236,7 +236,8 @@ def generate_pdf(
         rightMargin=40,
         leftMargin=40,
         topMargin=40,
-        bottomMargin=40
+        bottomMargin=40,
+        pageCompression=0
     )
 
     styles = getSampleStyleSheet()

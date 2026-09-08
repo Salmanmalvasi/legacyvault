@@ -24,3 +24,7 @@ val SoftBorder = Color(0xFFE5DFD5)
 // Beneficiary / Attestor modern accents
 val IndigoModern = Color(0xFF4338CA)
 val CyanAccent = Color(0xFF0284C7)
+val GoldAccent = Color(0xFFEAB308)
+val HeritageTealLight = Color(0xFFCCECE8)
+val WarmAmberDark = Color(0xFF92400E)
+val Terracotta = Color(0xFFC2410C)

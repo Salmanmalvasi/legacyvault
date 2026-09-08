@@ -47,38 +47,9 @@ fun OwnerHomeScreen(
             .fillMaxSize()
             .background(WarmCream)
             .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
-        // Top Demo Mode Banner & One-Tap Reset Trigger
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = WarmAmberLight
-            ) {
-                Text(
-                    text = "⏱ DEMO ACCELERATED: 30s Check-In",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = WarmAmber,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                )
-            }
-            TextButton(
-                onClick = { repository.resetDemoState() },
-                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
-            ) {
-                Icon(imageVector = Icons.Default.Refresh, contentDescription = "Reset Demo", modifier = Modifier.size(14.dp), tint = SlateNavy)
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Reset Demo", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = SlateNavy)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Elder-friendly Warm Greeting
+        // Top Header Row: Warm greeting on left, sleek compact demo pill on right
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -87,34 +58,59 @@ fun OwnerHomeScreen(
             Column {
                 Text(
                     text = "Namaste,",
-                    fontSize = 18.sp,
+                    fontSize = 16.sp,
                     color = SlateGrey,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
                     text = ownerName,
-                    fontSize = 24.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = DeepCharcoal
                 )
             }
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(ForestGreenLight),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Favorite,
-                    contentDescription = "Health signal",
-                    tint = ForestGreen,
-                    modifier = Modifier.size(26.dp)
-                )
+
+            // Unobtrusive corner indicator
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = WarmAmberLight.copy(alpha = 0.9f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(WarmAmber)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = "30s Demo",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = WarmAmberDark
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                IconButton(
+                    onClick = { repository.resetDemoState() },
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Reset Demo",
+                        modifier = Modifier.size(16.dp),
+                        tint = SlateGrey
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
         // Reassuring Living Signal Check-In Card
         Card(

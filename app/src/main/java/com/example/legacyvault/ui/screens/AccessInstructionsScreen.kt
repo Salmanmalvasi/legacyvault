@@ -73,7 +73,7 @@ fun AccessInstructionsScreen(
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            text = "These practical notes are stored safely encrypted. They can only be released to your designated family member when verified by your trusted attestors.",
+                            text = "These practical notes are stored safely encrypted. They can only be released to your designated family member when attested by your trusted attestors.",
                             fontSize = 13.sp,
                             color = DeepCharcoal,
                             lineHeight = 18.sp

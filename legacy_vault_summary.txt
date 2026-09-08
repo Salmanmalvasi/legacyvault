@@ -1,0 +1,17 @@
+LEGACY VAULT — CONSOLIDATED ESTATE SUMMARY
+Owner: S. Sundaram (Senior Citizen, 74) | Beneficiary: Ramesh Kumar (Son)
+
+=== Bank Accounts & Deposits (2 records) ===
+- {'institution': 'State Bank of India', 'account_type': 'Savings Account', 'account_number': '3049xxxx9120', 'branch': 'Adyar Chennai Branch', 'nominee': 'Ramesh Kumar (Son)'}
+  [GAP]: Account number is partially masked or truncated — verify with passbook/branch.
+- {'institution': 'SBI', 'account_type': 'Savings', 'account_number': '304918239120', 'branch': 'Adyar', 'ifsc': 'SBIN0001234'}
+  [GAP]: Nominee name not recorded on document — branch verification required.
+=== Insurance & Life Policies (1 records) ===
+- {'institution': 'Life Insurance Corporation of India (LIC)', 'policy_type': 'Jeevan Anand', 'policy_number': '847291xxx', 'sum_assured': 'Rs. 10,00,000'}
+  [GAP]: Policy number partially obscured — verify with insurance agent/portal.
+  [GAP]: Maturity date not found on document scan.
+=== Loans & Liabilities (0 records) ===
+=== EPF, PPF & Retirement Funds (1 records) ===
+- {'institution': "Employees' Provident Fund Organisation (EPFO)", 'account_type': 'EPF & Pension Fund', 'uan': '100928374615', 'member_id': 'TNMAS0012345000001'}
+=== Important Access & Physical Asset Instructions (1 records) ===
+- {'label': 'Bank Locker Key & Property Papers', 'value': 'Key is in top-left drawer of Godrej wooden cupboard, behind the prayer book. Locker #42 at SBI Adyar.'}
