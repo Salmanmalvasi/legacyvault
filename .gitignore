@@ -1,0 +1,27 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+backend/venv/
+backend/__pycache__/
+backend/*.db
+document_pipeline/__pycache__/
+*.pyc
+*.pdf
+app/build/
+build/
+*prompt*.md
+*prompt*
+IQOO Hackathon/
+"IQOO Hackathon"/
