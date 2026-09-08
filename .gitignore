@@ -1,12 +1,7 @@
 *.iml
 .gradle
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+.idea/
 .DS_Store
 /build
 /captures
@@ -15,13 +10,20 @@
 local.properties
 backend/venv/
 backend/__pycache__/
-backend/*.db
+blockchain/__pycache__/
+scripts/__pycache__/
 document_pipeline/__pycache__/
+__pycache__/
 *.pyc
 *.pdf
+*.db
+backend/*.db
 app/build/
 build/
+.env
+.env.*
 *prompt*.md
 *prompt*
 IQOO Hackathon/
 "IQOO Hackathon"/
+
